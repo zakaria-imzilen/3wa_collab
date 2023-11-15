@@ -30,24 +30,44 @@ dbconn()
 app.post(
 	"/signup",
 	(req, res, next) => {
-		// Sign up is DONE
-		req.user = newAccount;
-
-		// 1- Generate a token
-		const token = crypto.randomUUID();
-		req.token = token;
-
-		// 2- Store it in DB + his new user_id
-		EmailToken.create({ token, user_id: req.user._id })
+		User.create(req.body)
 			.then((resp) => {
-				if (resp) {
-					// Send him the email validation
-					next();
-				} else {
-					next({ status: 500, message: "Couldn't send the email validation" });
-				}
+				console.log("New User", resp);
+				console.log("User object", resp.toObject());
+				// Sign up is DONE
+				req.user = resp.toObject();
+
+				// 1- Generate a token
+				const token = crypto.randomUUID();
+				req.token = token;
+
+				// 2- Store it in DB + his new user_id
+				EmailToken.create({ token, user_id: req.user._id })
+					.then((resp) => {
+						if (resp) {
+							// Send him the email validation
+							next();
+						} else {
+							next({
+								status: 500,
+								message: "Couldn't send the email validation",
+							});
+						}
+					})
+					.catch((err) => {
+						next({
+							status: 500,
+							message:
+								err.message ?? "Couldn't Generate token for the user (in db)",
+						});
+					});
 			})
-			.catch((err) => {});
+			.catch((err) => {
+				next({
+					status: 500,
+					message: err.message ?? "Couldn't add the new user to DB",
+				});
+			});
 	},
 	sendEmailVerif
 );
