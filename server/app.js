@@ -28,13 +28,19 @@ app.post("/upload", upload.single("file"), async (req, res, next) => {
 	// Exploit the file data (lah ykhlaf 3la multer memory storage)
 	// It's uploaded it 🤫 in RAM
 	// Now we can point to that file and play with its data
+	console.log(req.file);
 	try {
 		const b64 = Buffer.from(req.file.buffer).toString("base64");
 		let dataURI = "data:" + req.file.mimetype + ";base64," + b64;
 		const cldRes = await handleUpload(dataURI);
+		// cldRes: { name: ..., url: ..., date: ..., ........... }
+
+		console.log(cldRes);
 
 		const fileURL = cldRes.url;
 
+		// 3aad ana I created the Post with the appropriate URL
+		// (URL from the cloud)
 		Post.create({ url: fileURL })
 			.then((resp) => {
 				console.log(resp);
